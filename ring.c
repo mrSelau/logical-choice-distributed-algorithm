@@ -57,17 +57,17 @@ main(int argc, char** argv){
       printf("Eleicao: \n");
       scanf("%i", &falha);
       if(falha == 0){
-        MPI_Send(&falha, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
+        MPI_Send(&falha, 1, MPI_INT, prox, 2, MPI_COMM_WORLD);
       }
     }
     else{
-      MPI_Recv(&falha, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
+      MPI_Recv(&falha, 1, MPI_INT, MPI_ANY_SOURCE, 2, MPI_COMM_WORLD, &status);
       if(falha == 0){
         printf("Pid: %d Message: %d v: %d\n", my_rank, tela, vetor[my_rank]);
         if(my_rank == cordenator){
           MPI_Send(&falha, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
         }else{
-          MPI_Send(&falha, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
+          MPI_Send(&falha, 1, MPI_INT, prox, 2, MPI_COMM_WORLD);
         }
       }
     }
