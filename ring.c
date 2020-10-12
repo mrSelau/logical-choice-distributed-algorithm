@@ -26,7 +26,7 @@ main(int argc, char** argv){
     MPI_Send(&tela, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
     MPI_Send(&vetor[0], proc_n, MPI_INT, 1, 1, MPI_COMM_WORLD);
   }else{
-    if(my_rank == cordenator){
+    if(my_rank == proc_n-1){
       MPI_Recv(&tela, 1, MPI_INT, my_rank-1, 0, MPI_COMM_WORLD, &status);
       MPI_Recv(&vetor[0], proc_n, MPI_INT, my_rank-1, 1, MPI_COMM_WORLD, &status);
       tela++;
@@ -45,14 +45,14 @@ main(int argc, char** argv){
 
   while(1){
     if ( my_rank == 0 ){
-      MPI_Recv(&falha, 1, MPI_INT, cordenator, 2, MPI_COMM_WORLD, &status);
+      MPI_Recv(&falha, 1, MPI_INT, proc_n-1, 2, MPI_COMM_WORLD, &status);
       printf("Eleicao: \n");
       scanf("%i", &falha);
 
       int voltou = 0;
       printf("Alguém voltou?: \n");
       scanf("%i", &voltou);
-
+      printf("----------------------------------\n");
       if(voltou != 0){
         vetor[voltou] = 1;
       }
@@ -79,9 +79,14 @@ main(int argc, char** argv){
       if(falha == 0){
         MPI_Recv(&vetor[0], proc_n, MPI_INT, my_rank-1, 1, MPI_COMM_WORLD, &status);
         if(vetor[my_rank] == 1){
-          printf("Pid: %d Message: %d v: %d\n", my_rank, tela, vetor[my_rank]);
+          if(cordenator == my_rank){
+            printf("Pid: %d Message: %d v: %d (CORDENATOR)\n", my_rank, tela, vetor[my_rank]);
+          }else{
+            printf("Pid: %d Message: %d v: %d\n", my_rank, tela, vetor[my_rank]);
+          }
+          
         }
-        if(my_rank == cordenator){
+        if(my_rank == proc_n-1){
           MPI_Send(&falha, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
         }else{
           MPI_Send(&falha, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
@@ -93,7 +98,7 @@ main(int argc, char** argv){
         if(vetor[my_rank] == 1){
           printf("Pid: %d Candidato\n", my_rank);
         }
-        if(my_rank == cordenator){
+        if(my_rank == proc_n-1){
           MPI_Send(&falha, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
         }else{
           MPI_Send(&falha, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
