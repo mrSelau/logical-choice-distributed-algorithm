@@ -17,7 +17,7 @@ main(int argc, char** argv){
   int vetor[proc_n];
   int prox = 0;
   int tela = 0;
-  int falha = 0;
+  int eleicao = 0;
 
   if ( my_rank == 0 ){
     vetor[0] = 0 ;
@@ -30,7 +30,7 @@ main(int argc, char** argv){
       MPI_Recv(&tela, 1, MPI_INT, my_rank-1, 0, MPI_COMM_WORLD, &status);
       MPI_Recv(&vetor[0], proc_n, MPI_INT, my_rank-1, 1, MPI_COMM_WORLD, &status);
       tela++;
-      MPI_Send(&falha, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+      MPI_Send(&eleicao, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
       printf("Pid: %d Message: %d v: %d\n", my_rank, tela, vetor[my_rank]);
     }else{
       MPI_Recv(&tela, 1, MPI_INT, my_rank-1, 0, MPI_COMM_WORLD, &status);
@@ -45,51 +45,56 @@ main(int argc, char** argv){
 
   while(1){
     if ( my_rank == 0 ){
-      MPI_Recv(&falha, 1, MPI_INT, proc_n-1, 2, MPI_COMM_WORLD, &status);
-      printf("Eleicao: \n");
-      scanf("%i", &falha);
+      MPI_Recv(&eleicao, 1, MPI_INT, proc_n-1, 2, MPI_COMM_WORLD, &status);
+
+      int falhou = 0;
+      printf("Alguém falhou?(n processo): \n");
+      scanf("%i", &falhou);
 
       int voltou = 0;
-      printf("Alguém voltou?: \n");
+      printf("Alguém voltou?(n processo): \n");
       scanf("%i", &voltou);
       printf("----------------------------------\n");
+      vetor[falhou] = 0;
       if(voltou != 0){
         vetor[voltou] = 1;
       }
 
-      if(falha == 0){
-        MPI_Send(&falha, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
+      int eleicao = 0;
+      if(falhou == cordenator) eleicao = 1;
+
+      if(eleicao == 0){
+        MPI_Send(&eleicao, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
         MPI_Send(&vetor[0], proc_n, MPI_INT, my_rank+1, 1, MPI_COMM_WORLD);
       }else{
-        vetor[cordenator] = 0;
         for(int i = proc_n-1; i>0; i--){
           if(vetor[i] == 1){
             cordenator = i;
             break;
           }
         }
-        MPI_Send(&falha, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
+        MPI_Send(&eleicao, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
         MPI_Send(&cordenator, 1, MPI_INT, my_rank+1, 3, MPI_COMM_WORLD);
         MPI_Send(&vetor[0], proc_n, MPI_INT, my_rank+1, 1, MPI_COMM_WORLD);
       }
 
     }
     else{
-      MPI_Recv(&falha, 1, MPI_INT, my_rank-1, 2, MPI_COMM_WORLD, &status);
-      if(falha == 0){
+      MPI_Recv(&eleicao, 1, MPI_INT, my_rank-1, 2, MPI_COMM_WORLD, &status);
+      if(eleicao == 0){
         MPI_Recv(&vetor[0], proc_n, MPI_INT, my_rank-1, 1, MPI_COMM_WORLD, &status);
         if(vetor[my_rank] == 1){
           if(cordenator == my_rank){
-            printf("Pid: %d Message: %d v: %d (CORDENATOR)\n", my_rank, tela, vetor[my_rank]);
+            printf("Pid: %d Message: %d v: %d (ELEITO)\n", my_rank, tela, vetor[my_rank]);
           }else{
             printf("Pid: %d Message: %d v: %d\n", my_rank, tela, vetor[my_rank]);
           }
           
         }
         if(my_rank == proc_n-1){
-          MPI_Send(&falha, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+          MPI_Send(&eleicao, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
         }else{
-          MPI_Send(&falha, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
+          MPI_Send(&eleicao, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
           MPI_Send(&vetor[0], proc_n, MPI_INT, my_rank+1, 1, MPI_COMM_WORLD);
         }
       }else{
@@ -99,9 +104,9 @@ main(int argc, char** argv){
           printf("Pid: %d Candidato\n", my_rank);
         }
         if(my_rank == proc_n-1){
-          MPI_Send(&falha, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+          MPI_Send(&eleicao, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
         }else{
-          MPI_Send(&falha, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
+          MPI_Send(&eleicao, 1, MPI_INT, my_rank+1, 2, MPI_COMM_WORLD);
           MPI_Send(&cordenator, 1, MPI_INT, my_rank+1, 3, MPI_COMM_WORLD);
           MPI_Send(&vetor[0], proc_n, MPI_INT, my_rank+1, 1, MPI_COMM_WORLD);
         }
