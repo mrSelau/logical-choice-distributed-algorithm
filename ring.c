@@ -15,6 +15,7 @@ main(int argc, char** argv){
   
   int cordenator = proc_n-1;
   int vetor[proc_n];
+  int candidatos[proc_n];
   int prox = 0;
   int tela = 0;
   int eleicao = 0;
@@ -61,8 +62,9 @@ main(int argc, char** argv){
       }
 
       int eleicao = 0;
-      if(falhou == cordenator) eleicao = 1;
-
+      if(falhou == cordenator ) eleicao = 1;
+      if(vetor[cordenator] == 0) eleicao = 1;
+      
       int k = my_rank + 1;
       int prox = 0;
       for(k; k<proc_n; k++){
@@ -77,15 +79,22 @@ main(int argc, char** argv){
         MPI_Send(&cordenator, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
         MPI_Send(&vetor[0], proc_n, MPI_INT, prox, 1, MPI_COMM_WORLD);
       }else{
-        for(int i = proc_n-1; i>0; i--){
-          if(vetor[i] == 1){
-            cordenator = i;
-            break;
-          }
+        for(int i = 0; i<proc_n-1; i++){
+          candidatos[i] = 0;
         }
         MPI_Send(&eleicao, 1, MPI_INT, prox, 2, MPI_COMM_WORLD);
         MPI_Send(&cordenator, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
         MPI_Send(&vetor[0], proc_n, MPI_INT, prox, 1, MPI_COMM_WORLD);
+        MPI_Send(&candidatos[0], proc_n, MPI_INT, prox, 4, MPI_COMM_WORLD);
+        MPI_Recv(&candidatos[0], proc_n, MPI_INT, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &status);
+        candidatos[cordenator] = 0;
+        for(int i = proc_n-1; i>0; i--){
+          if(candidatos[i] == 1){
+            cordenator = i;
+            break;
+          }
+        }
+        MPI_Send(&cordenator, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
       }
 
     }
@@ -120,6 +129,8 @@ main(int argc, char** argv){
       }else{
         MPI_Recv(&cordenator, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
         MPI_Recv(&vetor[0], proc_n, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+        MPI_Recv(&candidatos[0], proc_n, MPI_INT, MPI_ANY_SOURCE, 4, MPI_COMM_WORLD, &status);
+        candidatos[my_rank] =1;
         int k = my_rank + 1;
         int prox = 0;
         for(k; k<proc_n; k++){
@@ -132,11 +143,16 @@ main(int argc, char** argv){
           printf("Pid: %d Candidato\n", my_rank);
         }
         if(prox == 0){
+          MPI_Send(&candidatos[0], proc_n, MPI_INT, prox, 4, MPI_COMM_WORLD);
+          MPI_Recv(&cordenator, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
           MPI_Send(&eleicao, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
         }else{
           MPI_Send(&eleicao, 1, MPI_INT, prox, 2, MPI_COMM_WORLD);
           MPI_Send(&cordenator, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
           MPI_Send(&vetor[0], proc_n, MPI_INT, prox, 1, MPI_COMM_WORLD);
+          MPI_Send(&candidatos[0], proc_n, MPI_INT, prox, 4, MPI_COMM_WORLD);
+          MPI_Recv(&cordenator, 1, MPI_INT, MPI_ANY_SOURCE, 3, MPI_COMM_WORLD, &status);
+          MPI_Send(&cordenator, 1, MPI_INT, prox, 3, MPI_COMM_WORLD);
         }
       }
 
